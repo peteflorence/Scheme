@@ -428,7 +428,7 @@
 
         (list 'run-file run-file)
         (list 'apply oo-apply)
-        ;(list 'new *)
+        (list 'new make-instance)     ;; PROBLEM 3!!  Maybe my favorite problem
 
         ))
 

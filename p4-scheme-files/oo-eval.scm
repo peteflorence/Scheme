@@ -428,6 +428,7 @@
 
         (list 'run-file run-file)
         (list 'apply oo-apply)
+        ;(list 'new *)
 
         ))
 
@@ -583,35 +584,33 @@
 ;; PROBLEM 2
 
 ;; Create make-class special form
-
-
 ;; oo-eval should call this to handle the make-class special form
+
 (define (methodize exp env)
-  (define (methodize-helper exp)
-      (list 
-       (list (car (first exp)) 
-             (oo-eval (second (first exp)) env))        
-        (list (car (second exp))
-              (oo-eval (second (second exp)) env))))
+  (define null-list '())
+  (define (methodize-helper methodlist)    
+    (if (equal? (cdr methodlist) null-list)                                           ;; If this is the last element in the association list, just return a one-element list of the assoc pair
+        (list   
+         (list (first (first methodlist))
+                 (oo-eval (second (first methodlist)) env)))
+           
+           (append                                                                    ;; If this is not the last element, then find this assoc pair and append on the rest of the assoc pairs
+            (list
+             (list (first (first methodlist))
+                   (oo-eval (second (first methodlist)) env)))
+            (methodize-helper (cdr methodlist)))))  
   (if (not (list? exp)) (oo-error "You need a list (association list) of methods!")   ;; If not list, error
-      (if (equal? '() exp) exp                                                      ;; If empty list, just return the empty list
-          (methodize-helper exp))))                                                 ;; If there's a list, call recursive methodize-helper
+      (if (equal? '() exp) exp                                                        ;; If empty list, just return the empty list
+          (methodize-helper exp))))                                                   ;; If there's a list, call recursive methodize-helper
   
-      
-  
-(define (eval-make-class exp env)  ;; PROBLEM 2                                                        ;;; HERE!!!!!!
-  ;(display (fifth exp))
-  (display (first (first (fifth exp))))
-  (newline)
-  (display (second (first (fifth exp))))
-  ;(display (oo-eval (second (first (fifth exp))) env))
+(define (eval-make-class exp env)
   (create-class 
-   (oo-eval (second exp) env) ; create name
-   (oo-eval (third exp) env)  ; create parent-class
-   (fourth exp)               ; create list of slots (leave un-evaluated)
-   (methodize (fifth exp) env)
+   (oo-eval (second exp) env)  ;; create name
+   (oo-eval (third exp) env)   ;; create parent-class
+   (fourth exp)                ;; create list of slots (leave un-evaluated)
+   (methodize (fifth exp) env) ;; create association list of methods 
    ))
-                   ; create association list of methods
+
    
 
 

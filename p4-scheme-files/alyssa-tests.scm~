@@ -91,7 +91,7 @@
 (define test-problem2-simple
   (make-test "Problem 2: make-class special form"
          (lambda (fail)
-             (let* ((exp '(define class (make-class 'test-class #f (a b c) ((METHOD1 (lambda () 1)) (METHOD2 (lambda () 2))  )))) 
+             (let* ((exp '(define class (make-class 'test-class #f (a b c) ((METHOD1 (lambda () 1)) (METHOD2 (lambda () 2))))))
                     (class (oo-eval `(begin ,exp class) the-global-environment)))
                (cond ((not (class? class))
                       (fail "oo-eval of make-class did not produce a class"))

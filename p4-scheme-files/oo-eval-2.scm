@@ -592,7 +592,7 @@
 (define (methodize exp env)
   (define null-list '())
   (define (methodize-helper methodlist)    
-    (if (null? methodlist) '()                                           ;; If this is the last element in the association list, just return a one-element list of the assoc pair
+    (if (equal? (cdr methodlist) null-list)                                           ;; If this is the last element in the association list, just return a one-element list of the assoc pair
         (list   
          (list (first (first methodlist))
                  (oo-eval (second (first methodlist)) env)))
@@ -606,13 +606,6 @@
       (if (equal? '() exp) exp                                                        ;; If empty list, just return the empty list
           (methodize-helper exp))))                                                   ;; If there's a list, call recursive methodize-helper
   
-;; Mike's Version - this would replace (methodize (fifth exp) env)
-;(map (lambda (x)
-;          (list (first x)
-;                (oo-eval (second x) env)))
-;       (fifth exp))
-
-
 (define (eval-make-class exp env)
   (create-class 
    (oo-eval (second exp) env)  ;; create name

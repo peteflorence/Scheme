@@ -459,7 +459,7 @@
   (class-name class))
 
 ; box-instance: given an instance and a label, put that instance in the global instance table and
-; return a unique id that can look it up later via lookup-instance. The key should include the
+; return a unique id that can look it up later via apply-instance. The key should include the
 ; descriptive label
 (define (hide-instance label instance)
   (let ((uid (box label)))
@@ -567,7 +567,13 @@
 			     (if (read-slot self ':parent-class)
 				 (invoke (read-slot self ':parent-class) 'GET-SLOTS)
 				 '()))))
+       (GET-TYPES ,(lambda (self)                                                        ;; PROBLEM 5   ;; I think this would work if I could have figured out Problem 4?
+		     (append (read-slot self ':name)
+			     (if (read-slot self ':name)
+				 (invoke (read-slot self ':parent-class) 'GET-TYPES)
+				 '()))))
 
+      
        ;; These are not needed to bootstrap, but enable some introspection
        (GET-CLASS   ,(lambda (self) (read-slot self ':class)))
        (GET-METHODS ,(lambda (self)
@@ -589,23 +595,7 @@
 ;; Create make-class special form
 ;; oo-eval should call this to handle the make-class special form
 
-(define (methodize exp env)
-  (define null-list '())
-  (define (methodize-helper methodlist)    
-    (if (null? methodlist) '()                                           ;; If this is the last element in the association list, just return a one-element list of the assoc pair
-        (list   
-         (list (first (first methodlist))
-                 (oo-eval (second (first methodlist)) env)))
-           
-           (append                                                                    ;; If this is not the last element, then find this assoc pair and append on the rest of the assoc pairs
-            (list
-             (list (first (first methodlist))
-                   (oo-eval (second (first methodlist)) env)))
-            (methodize-helper (cdr methodlist)))))  
-  (if (not (list? exp)) (oo-error "You need a list (association list) of methods!")   ;; If not list, error
-      (if (equal? '() exp) exp                                                        ;; If empty list, just return the empty list
-          (methodize-helper exp))))                                                   ;; If there's a list, call recursive methodize-helper
-  
+ 
 ;; Mike's Version - this would replace (methodize (fifth exp) env)
 ;(map (lambda (x)
 ;          (list (first x)
@@ -614,6 +604,17 @@
 
 
 (define (eval-make-class exp env)
+  (define (methodize exp env)
+    (define null-list '())
+    (define (methodize-helper methodlist)    
+      (if (null? methodlist) null-list                                          ;; If this is the last element in the association list, just return a one-element list of the assoc pair
+          (cons                                                                    ;; If this is not the last element, then find this assoc pair and append on the rest of the assoc pair
+           (list (first (first methodlist))
+                 (oo-eval (second (first methodlist)) env))
+           (methodize-helper (cdr methodlist)))))  
+    (if (not (list? exp)) (oo-error "You need a list (association list) of methods!")   ;; If not list, error
+        (if (equal? '() exp) exp                                                        ;; If empty list, just return the empty list
+            (methodize-helper exp))))                                                   ;; If there's a list, call recursive methodize-helper 
   (create-class 
    (oo-eval (second exp) env)  ;; create name
    (oo-eval (third exp) env)   ;; create parent-class
@@ -621,7 +622,7 @@
    (methodize (fifth exp) env) ;; create association list of methods 
    ))
 
-   
+
 
 
 
@@ -646,7 +647,7 @@
       (oo-error "Applications of instances must include a method name as the first argument. Instance:" instance)
       (let ((methodname (car arguments))
             (methodargs (cdr arguments)))
-        (invoke instance methodname methodargs))))
+        (method-call instance methodname (instance-class instance) methodargs))))
 
 ;; Call a method on an object (variable arguments form)
 (define (invoke instance method . args)
@@ -680,7 +681,7 @@
                                     args-env)))
 	  (eval-sequence
 	   (procedure-body proc)
-	   selfsuper-env)))))
+	   selfsuper-env)))))                          ;; PROBLEM 4 -- I know it is 
 
 ; builds a procedure that starts a method search at parent, for "super"
 (define (make-super instance parent-class)
